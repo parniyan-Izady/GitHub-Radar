@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GitHub Relationship Radar: Analyze any GitHub account to find who is not following back, one-sided followers, and mutual connections.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰</text></svg>">
   <title>GitHub Follower & Relationship Analyzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +28,7 @@
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: #090a10;
       background-image: var(--bg-gradient);
       color: var(--text-main);
@@ -505,10 +507,13 @@
       const headers = { 'Accept': 'application/vnd.github.v3+json' };
       if (token) headers['Authorization'] = `token ${token}`;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       while (true) {
         onProgress(page);
         const url = `${endpoint}?per_page=100&page=${page}`;
-        const response = await fetch(url, { headers });
+        const response = await fetch(url, { headers, signal: controller.signal });
 
         if (!response.ok) {
           let errText = await response.text();
@@ -527,6 +532,7 @@
         if (data.length < 100) break;
         page++;
       }
+      clearTimeout(timeoutId);
       return results;
     }
 
@@ -562,9 +568,13 @@
           statusTitle.textContent = `Analyzing @${username}...`;
           statusMsg.textContent = 'Backend is fetching and analyzing follower data...';
 
-          const backendRes = await fetch(`/api/analyze?user=${encodeURIComponent(username)}&token=${encodeURIComponent(token)}`);
+          const backendRes = await fetch(`/api/analyze?user=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: token ? { 'X-GitHub-Token': token } : {}
+          });
           if (backendRes.ok) {
             const result = await backendRes.json();
+            if (result.error) throw new Error(`Backend error: ${result.error}`);
             const profile = result.profile;
             lists.unfollowers = result.unfollowers;
             lists.fans = result.fans;
@@ -646,8 +656,14 @@
         switchTab('unfollowers');
 
       } catch (err) {
-        statusTitle.textContent = 'Error occurred';
-        statusMsg.textContent = err.message || 'Failed to retrieve GitHub data.';
+        statusTitle.textContent = 'Something went wrong';
+        let friendlyMsg = err.message || 'Failed to retrieve GitHub data.';
+        if (err.name === 'AbortError') {
+          friendlyMsg = 'Request timed out after 30 seconds. GitHub API may be slow — please try again.';
+        } else if (friendlyMsg.includes('403') || friendlyMsg.includes('rate limit')) {
+          friendlyMsg = 'GitHub API rate limit reached (60 requests/hour). Add a Personal Access Token to increase to 5,000 requests/hour.';
+        }
+        statusMsg.textContent = friendlyMsg;
         console.error(err);
       } finally {
         analyzeBtn.disabled = false;
@@ -678,7 +694,13 @@
       grid.innerHTML = '';
 
       if (userList.length === 0) {
-        grid.innerHTML = `<div class="empty-state">No users found in this category.</div>`;
+        const messages = {
+          unfollowers: '✅ Great news — everyone followed is following back!',
+          fans: 'No one-sided followers found in this analysis.',
+          mutual: 'No mutual connections found for this account.'
+        };
+        const msg = messages[currentTab] || 'No users found in this category.';
+        grid.innerHTML = `<div class="empty-state">${msg}</div>`;
         return;
       }
 
