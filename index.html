@@ -694,6 +694,11 @@
       grid.innerHTML = '';
 
       if (userList.length === 0) {
+        const filterVal = (document.getElementById('filterInput')?.value || '').trim();
+        if (filterVal) {
+          grid.innerHTML = `<div class="empty-state">No accounts found matching "${filterVal.replace(/[&<>'"]/g, '')}".</div>`;
+          return;
+        }
         const messages = {
           unfollowers: '✅ Great news — everyone followed is following back!',
           fans: 'No one-sided followers found in this analysis.',
@@ -733,7 +738,7 @@
       if (format === 'csv') {
         const rows = [['Username', 'Profile URL', 'Avatar URL']];
         currentItems.forEach(u => rows.push([u.login, u.html_url, u.avatar_url]));
-        content = rows.map(r => r.join(',')).join('\n');
+        content = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
         filename += '.csv';
         mimeType = 'text/csv;charset=utf-8;';
       } else {
@@ -755,6 +760,7 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     document.getElementById('username').addEventListener('keypress', (e) => {

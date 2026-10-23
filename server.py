@@ -9,10 +9,11 @@ import http.server
 import json
 import os
 import socketserver
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 PORT: int = 8000
 DIRECTORY: str = os.path.dirname(os.path.abspath(__file__))
@@ -23,6 +24,14 @@ class GitHubRadarHandler(http.server.SimpleHTTPRequestHandler):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+    def do_OPTIONS(self) -> None:
+        """Handle CORS preflight requests."""
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-GitHub-Token")
+        self.end_headers()
 
     def do_GET(self) -> None:
         """Handle incoming GET requests."""
@@ -40,7 +49,8 @@ class GitHubRadarHandler(http.server.SimpleHTTPRequestHandler):
         params = urllib.parse.parse_qs(parsed_url.query)
 
         raw_user = params.get("user", [""])[0].strip()
-        token = params.get("token", [""])[0].strip()
+        # Read token from request header (secure) or fallback to query parameter
+        token = self.headers.get("X-GitHub-Token", "").strip() or params.get("token", [""])[0].strip()
 
         # Sanitize username or handle profile URL
         user = raw_user.rstrip("/").split("/")[-1]
@@ -105,21 +115,21 @@ class GitHubRadarHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json_response(500, {"error": f"Internal error: {str(err)}"})
 
     def fetch_json(self, url: str, headers: Dict[str, str]) -> Dict[str, Any]:
-        """Fetch a single JSON resource from GitHub API."""
+        """Fetch a single JSON resource from GitHub API with 20s timeout."""
         req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, timeout=20) as response:
             return json.loads(response.read().decode("utf-8"))
 
     def fetch_all_pages(
-        self, base_url: str, headers: Dict[str, str]
+        self, base_url: str, headers: Dict[str, str], max_pages: int = 100
     ) -> List[Dict[str, Any]]:
-        """Paginate through all items for a GitHub collection endpoint."""
+        """Paginate through all items for a GitHub collection endpoint with 20s timeout."""
         results: List[Dict[str, Any]] = []
         page = 1
-        while True:
+        while page <= max_pages:
             url = f"{base_url}?per_page=100&page={page}"
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=20) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 if not data:
                     break
@@ -135,6 +145,7 @@ class GitHubRadarHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-GitHub-Token")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -142,13 +153,21 @@ class GitHubRadarHandler(http.server.SimpleHTTPRequestHandler):
 
 def main() -> None:
     """Start the HTTP server on configured port."""
+    if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), GitHubRadarHandler) as httpd:
         print("=" * 60)
-        print(f"🚀 GitHub Radar running at: http://localhost:{PORT}")
+        print(f"🛰️  GitHub Radar running at: http://localhost:{PORT}")
         print("Press Ctrl+C to terminate.")
         print("=" * 60)
-        httpd.serve_forever()
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\n[+] Server shut down gracefully.")
 
 
 if __name__ == "__main__":

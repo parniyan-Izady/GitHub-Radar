@@ -1,7 +1,7 @@
 """GitHub Relationship Radar - Command Line Interface (CLI)
 
 Run via:
-    python cli.py <username> [--token <TOKEN>] [--export-csv <FILENAME>]
+    python cli.py <username> [--token <TOKEN>] [--csv <FILENAME>]
 """
 
 import argparse
@@ -11,11 +11,11 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 
 def fetch_all(base_url: str, token: str = "") -> List[Dict[str, Any]]:
-    """Fetch all pages from a GitHub collection endpoint."""
+    """Fetch all pages from a GitHub collection endpoint with 20s timeout."""
     headers = {
         "User-Agent": "GitHub-Radar-CLI",
         "Accept": "application/vnd.github.v3+json",
@@ -29,7 +29,7 @@ def fetch_all(base_url: str, token: str = "") -> List[Dict[str, Any]]:
         url = f"{base_url}?per_page=100&page={page}"
         req = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=20) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 if not data:
                     break
@@ -47,6 +47,12 @@ def fetch_all(base_url: str, token: str = "") -> List[Dict[str, Any]]:
 
 
 def run_cli() -> None:
+    if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
     parser = argparse.ArgumentParser(
         description="Inspect GitHub followers, non-mutual follows, and admirers."
     )
@@ -57,7 +63,7 @@ def run_cli() -> None:
     parser.add_argument(
         "--token",
         default="",
-        help="GitHub Personal Access Token for higher rate limits",
+        help="GitHub Personal Access Token for higher rate limits (5,000 req/hr)",
     )
     parser.add_argument(
         "--csv",
@@ -80,7 +86,7 @@ def run_cli() -> None:
     mutual = [u for u in following_list if u["login"].lower() in followers_map]
 
     print("=" * 60)
-    print(f"📊 GitHub Summary for @{clean_user}")
+    print(f"🛰️  GitHub Summary for @{clean_user}")
     print("=" * 60)
     print(f" Followers : {len(followers_list):,}")
     print(f" Following : {len(following_list):,}")
