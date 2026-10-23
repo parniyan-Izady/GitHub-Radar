@@ -23,8 +23,8 @@
 
 ## ✨ Features
 
-- **❌ Unfollowers Detection**: Discover users you follow who do not follow you back.
-- **⭐ Fan / Admirer Discovery**: Spot people who follow you, but you haven't followed back.
+- **❌ Unfollowers Detection**: Discover followed accounts that do not follow back.
+- **⭐ Fan / Admirer Discovery**: Identify accounts following the user that are not followed back.
 - **🤝 Mutual Connections**: Easily identify friends who follow each other.
 - **🎨 Modern Dark Dashboard**: Built with glassmorphism, responsive cards, micro-interactions, and real-time live search.
 - **📥 One-Click Export**: Save results anytime to CSV or JSON formats.
