@@ -4,20 +4,30 @@
 
 **A fast, elegant, zero-dependency tool to uncover unfollowers, admirers, and mutual connections on GitHub.**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Try%20Online-2ea44f?style=for-the-badge&logo=github)](https://parniyan-izady.github.io/GitHub-Radar/)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.8+](https://img.shields.io/badge/python-3.8+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Ready-brightgreen)](https://pages.github.com/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://parniyan-izady.github.io/GitHub-Radar/)
 [![Zero External Dependencies](https://img.shields.io/badge/Dependencies-0-orange.svg)](#-zero-dependencies)
 
 <p align="center">
+  <a href="https://parniyan-izady.github.io/GitHub-Radar/"><b>🚀 Try Live Web App</b></a> •
   <a href="#-features">Features</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-cli-usage">CLI</a> •
-  <a href="#-github-pages-hosting">GitHub Pages</a> •
   <a href="#-license">License</a>
 </p>
 
 </div>
+
+---
+
+## 🌐 Live Web Application
+
+No download or installation required! You can use the web version directly in your browser:
+
+👉 **[https://parniyan-izady.github.io/GitHub-Radar/](https://parniyan-izady.github.io/GitHub-Radar/)**
 
 ---
 
@@ -29,13 +39,13 @@
 - **🎨 Modern Dark Dashboard**: Built with glassmorphism, responsive cards, micro-interactions, and real-time live search.
 - **📥 One-Click Export**: Save results anytime to CSV or JSON formats.
 - **⚡ Zero Dependencies**: Powered entirely by the Python standard library (`http.server`, `urllib`) and vanilla web technologies.
-- **🌐 Dual Mode**: Works either via local Python backend or as a 100% client-side web application (compatible with GitHub Pages).
+- **🌐 Dual Mode**: Works either via local Python backend or as a 100% client-side web application (hosted on GitHub Pages).
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Local Run)
 
-### 1. Web Application (Recommended)
+### 1. Web Application via Local Server
 
 #### On Windows:
 Double-click `run.bat` or run:
@@ -66,18 +76,6 @@ python cli.py <username> --token ghp_xxxxxxxxxxxxxxxxxxxx
 # Export non-followers directly to CSV
 python cli.py <username> --csv unfollowers.csv
 ```
-
----
-
-## 🌐 Deploy to GitHub Pages (1-Click Free Hosting)
-
-Because `index.html` is 100% self-contained and communicates directly with the public GitHub REST API:
-
-1. Push this repository to GitHub.
-2. Go to **Settings > Pages**.
-3. Under **Branch**, select `main` (or `master`) and folder `/ (root)`.
-4. Click **Save**.
-5. Your analyzer will be live online on `https://<your-username>.github.io/<repo-name>/`!
 
 ---
 
