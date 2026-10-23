@@ -1,0 +1,5 @@
+# Zero external dependencies are strictly required!
+# The local server and Web UI run on Python standard library (http.server, urllib).
+#
+# Optional: requests library for the advanced CLI tool
+requests>=2.31.0

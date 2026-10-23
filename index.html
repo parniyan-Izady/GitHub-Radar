@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Follower & Relationship Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 15% 15%, #181926 0%, #0d0e15 100%);
+      --card-bg: rgba(26, 27, 38, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-primary: #7952ff;
+      --accent-gradient: linear-gradient(135deg, #7952ff 0%, #9e7aff 50%, #4facfe 100%);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --glass-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #090a10;
+      background-image: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(121, 82, 255, 0.15);
+      border: 1px solid rgba(121, 82, 255, 0.3);
+      color: #bca4ff;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .search-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      box-shadow: var(--glass-shadow);
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      background: rgba(15, 16, 26, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(121, 82, 255, 0.25);
+    }
+
+    .btn-analyze {
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      padding: 0.85rem 2rem;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      height: 48px;
+      margin-top: auto;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-analyze:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(121, 82, 255, 0.4);
+    }
+
+    .btn-analyze:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .token-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .status-box {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(121, 82, 255, 0.15);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1rem auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .profile-card {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.25rem 1.75rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .profile-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-primary);
+    }
+
+    .profile-text h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .profile-text p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .profile-stats {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .stat-pill {
+      text-align: center;
+    }
+
+    .stat-pill .num {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-pill .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .tabs-bar {
+      display: none;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.75rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      background: rgba(121, 82, 255, 0.15);
+      border-color: rgba(121, 82, 255, 0.4);
+      color: #fff;
+    }
+
+    .tab-badge {
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .tab-btn.active .tab-badge {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .actions-bar {
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      max-width: 300px;
+    }
+
+    .btn-export {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 0.6rem 1.1rem;
+      border-radius: 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-export:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .user-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .user-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .user-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(121, 82, 255, 0.4);
+    }
+
+    .user-card img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #1e1f2b;
+    }
+
+    .user-card-meta {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .user-card-meta .username {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #fff;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-card-meta .username:hover {
+      color: #00f2fe;
+    }
+
+    .user-tag {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .btn-visit {
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #d1d5db;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 0.5rem;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s;
+    }
+
+    .btn-visit:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="badge">GitHub Relationship Intelligence</div>
+      <h1>Follower & Unfollower Radar</h1>
+      <p>Instantly uncover who doesn't follow you back, admirers, and mutual connections</p>
+    </header>
+
+    <div class="search-card">
+      <div class="input-row">
+        <div class="input-group">
+          <label for="username">Target GitHub Username or URL</label>
+          <input type="text" id="username" placeholder="e.g. torvalds or https://github.com/octocat" required>
+        </div>
+        <div class="input-group">
+          <label for="token">Personal Access Token (Optional)</label>
+          <input type="password" id="token" placeholder="ghp_xxxxxxxx (optional for higher rate limits)">
+        </div>
+        <button id="analyzeBtn" class="btn-analyze" onclick="startAnalysis()">
+          <span>Analyze Profile</span>
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="token-hint">
+        💡 Unauthenticated requests allow up to 60 queries/hour. Adding a free GitHub Personal Access Token increases the limit to 5,000 requests/hour for large accounts.
+      </div>
+    </div>
+
+    <div id="statusBox" class="status-box">
+      <div class="spinner"></div>
+      <h3 id="statusTitle" style="font-size: 1.1rem; margin-bottom: 0.35rem;">Fetching data...</h3>
+      <p id="statusMsg" style="color: var(--text-muted); font-size: 0.9rem;">Connecting to GitHub API...</p>
+    </div>
+
+    <div id="profileCard" class="profile-card">
+      <div class="profile-info">
+        <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
+        <div class="profile-text">
+          <h2 id="profileName">--</h2>
+          <p id="profileHandle">@--</p>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-pill">
+          <div id="followersCount" class="num">0</div>
+          <div class="label">Followers</div>
+        </div>
+        <div class="stat-pill">
+          <div id="followingCount" class="num">0</div>
+          <div class="label">Following</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabsBar" class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('unfollowers')">
+        <span>❌ Don't Follow Back</span>
+        <span id="badgeUnfollowers" class="tab-badge">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('fans')">
+        <span>⭐ Fans (You Don't Follow Back)</span>
+        <span id="badgeFans" class="tab-badge">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('mutual')">
+        <span>🤝 Mutual Connections</span>
+        <span id="badgeMutual" class="tab-badge">0</span>
+      </button>
+    </div>
+
+    <div id="actionsBar" class="actions-bar">
+      <input type="text" id="filterInput" class="filter-input" placeholder="Filter by username..." oninput="filterCurrentList()">
+      <div style="display: flex; gap: 0.5rem;">
+        <button class="btn-export" onclick="exportData('csv')">Export CSV</button>
+        <button class="btn-export" onclick="exportData('json')">Export JSON</button>
+      </div>
+    </div>
+
+    <div id="userGrid" class="user-grid"></div>
+  </div>
+
+  <script>
+    let followersData = [];
+    let followingData = [];
+    let lists = {
+      unfollowers: [],
+      fans: [],
+      mutual: []
+    };
+    let currentTab = 'unfollowers';
+
+    function cleanUsername(input) {
+      if (!input) return '';
+      input = input.trim();
+      if (input.includes('github.com/')) {
+        const parts = input.split('github.com/')[1].split('/');
+        return parts[0].replace(/[^a-zA-Z0-9-_]/g, '');
+      }
+      return input.replace(/[^a-zA-Z0-9-_]/g, '');
+    }
+
+    async function fetchAllPages(endpoint, token, onProgress) {
+      const results = [];
+      let page = 1;
+      const headers = { 'Accept': 'application/vnd.github.v3+json' };
+      if (token) headers['Authorization'] = `token ${token}`;
+
+      while (true) {
+        onProgress(page);
+        const url = `${endpoint}?per_page=100&page=${page}`;
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+          let errText = await response.text();
+          try {
+            const errJson = JSON.parse(errText);
+            throw new Error(errJson.message || `HTTP ${response.status}`);
+          } catch (e) {
+            throw new Error(`GitHub API Error: ${response.status} (${response.statusText})`);
+          }
+        }
+
+        const data = await response.json();
+        if (!data || data.length === 0) break;
+
+        results.push(...data);
+        if (data.length < 100) break;
+        page++;
+      }
+      return results;
+    }
+
+    async function startAnalysis() {
+      const rawInput = document.getElementById('username').value;
+      const token = document.getElementById('token').value.trim();
+      const username = cleanUsername(rawInput);
+
+      if (!username) {
+        alert('Please enter a valid GitHub username or URL.');
+        return;
+      }
+
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const statusBox = document.getElementById('statusBox');
+      const statusTitle = document.getElementById('statusTitle');
+      const statusMsg = document.getElementById('statusMsg');
+      const profileCard = document.getElementById('profileCard');
+      const tabsBar = document.getElementById('tabsBar');
+      const actionsBar = document.getElementById('actionsBar');
+      const userGrid = document.getElementById('userGrid');
+
+      analyzeBtn.disabled = true;
+      statusBox.style.display = 'block';
+      profileCard.style.display = 'none';
+      tabsBar.style.display = 'none';
+      actionsBar.style.display = 'none';
+      userGrid.innerHTML = '';
+
+      try {
+        let backendWorked = false;
+        try {
+          statusTitle.textContent = `Analyzing @${username}...`;
+          statusMsg.textContent = 'Backend is fetching and analyzing follower data...';
+
+          const backendRes = await fetch(`/api/analyze?user=${encodeURIComponent(username)}&token=${encodeURIComponent(token)}`);
+          if (backendRes.ok) {
+            const result = await backendRes.json();
+            const profile = result.profile;
+            lists.unfollowers = result.unfollowers;
+            lists.fans = result.fans;
+            lists.mutual = result.mutual;
+
+            document.getElementById('profileAvatar').src = profile.avatar_url;
+            document.getElementById('profileName').textContent = profile.name || profile.login;
+            document.getElementById('profileHandle').textContent = `@${profile.login}`;
+            document.getElementById('followersCount').textContent = result.counts.followers.toLocaleString();
+            document.getElementById('followingCount').textContent = result.counts.following.toLocaleString();
+
+            document.getElementById('badgeUnfollowers').textContent = lists.unfollowers.length;
+            document.getElementById('badgeFans').textContent = lists.fans.length;
+            document.getElementById('badgeMutual').textContent = lists.mutual.length;
+
+            statusBox.style.display = 'none';
+            profileCard.style.display = 'flex';
+            tabsBar.style.display = 'flex';
+            actionsBar.style.display = 'flex';
+            switchTab('unfollowers');
+            backendWorked = true;
+          }
+        } catch (e) {
+          console.log('Backend not reachable, falling back to direct browser fetch...');
+        }
+
+        if (backendWorked) return;
+
+        statusTitle.textContent = `Connecting to @${username}...`;
+        statusMsg.textContent = 'Verifying GitHub account profile...';
+
+        const profileHeaders = { 'Accept': 'application/vnd.github.v3+json' };
+        if (token) profileHeaders['Authorization'] = `token ${token}`;
+
+        const userProfileRes = await fetch(`https://api.github.com/users/${username}`, { headers: profileHeaders });
+        if (!userProfileRes.ok) {
+          throw new Error(`User @${username} not found on GitHub.`);
+        }
+        const profile = await userProfileRes.json();
+
+        statusTitle.textContent = `Loading followers...`;
+        statusMsg.textContent = `Scanning followers list for @${username}...`;
+        followersData = await fetchAllPages(
+          `https://api.github.com/users/${username}/followers`,
+          token,
+          (page) => { statusMsg.textContent = `Fetching followers page ${page}...`; }
+        );
+
+        statusTitle.textContent = `Loading following...`;
+        statusMsg.textContent = `Scanning following list for @${username}...`;
+        followingData = await fetchAllPages(
+          `https://api.github.com/users/${username}/following`,
+          token,
+          (page) => { statusMsg.textContent = `Fetching following page ${page}...`; }
+        );
+
+        const followerMap = new Map(followersData.map(u => [u.login.toLowerCase(), u]));
+        const followingMap = new Map(followingData.map(u => [u.login.toLowerCase(), u]));
+
+        lists.unfollowers = followingData.filter(u => !followerMap.has(u.login.toLowerCase()));
+        lists.fans = followersData.filter(u => !followingMap.has(u.login.toLowerCase()));
+        lists.mutual = followingData.filter(u => followerMap.has(u.login.toLowerCase()));
+
+        document.getElementById('profileAvatar').src = profile.avatar_url;
+        document.getElementById('profileName').textContent = profile.name || profile.login;
+        document.getElementById('profileHandle').textContent = `@${profile.login}`;
+        document.getElementById('followersCount').textContent = profile.followers.toLocaleString();
+        document.getElementById('followingCount').textContent = profile.following.toLocaleString();
+
+        document.getElementById('badgeUnfollowers').textContent = lists.unfollowers.length;
+        document.getElementById('badgeFans').textContent = lists.fans.length;
+        document.getElementById('badgeMutual').textContent = lists.mutual.length;
+
+        statusBox.style.display = 'none';
+        profileCard.style.display = 'flex';
+        tabsBar.style.display = 'flex';
+        actionsBar.style.display = 'flex';
+
+        switchTab('unfollowers');
+
+      } catch (err) {
+        statusTitle.textContent = 'Error occurred';
+        statusMsg.textContent = err.message || 'Failed to retrieve GitHub data.';
+        console.error(err);
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    }
+
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab-btn').forEach((btn, index) => {
+        btn.classList.toggle('active', 
+          (tabName === 'unfollowers' && index === 0) ||
+          (tabName === 'fans' && index === 1) ||
+          (tabName === 'mutual' && index === 2)
+        );
+      });
+      document.getElementById('filterInput').value = '';
+      renderList(lists[currentTab]);
+    }
+
+    function filterCurrentList() {
+      const term = document.getElementById('filterInput').value.toLowerCase().trim();
+      const filtered = lists[currentTab].filter(user => user.login.toLowerCase().includes(term));
+      renderList(filtered);
+    }
+
+    function renderList(userList) {
+      const grid = document.getElementById('userGrid');
+      grid.innerHTML = '';
+
+      if (userList.length === 0) {
+        grid.innerHTML = `<div class="empty-state">No users found in this category.</div>`;
+        return;
+      }
+
+      userList.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'user-card';
+        card.innerHTML = `
+          <img src="${user.avatar_url}" alt="${user.login}" loading="lazy">
+          <div class="user-card-meta">
+            <a href="${user.html_url}" target="_blank" rel="noopener" class="username">${user.login}</a>
+            <div class="user-tag">ID: #${user.id}</div>
+          </div>
+          <a href="${user.html_url}" target="_blank" rel="noopener" class="btn-visit">View</a>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function exportData(format) {
+      const currentItems = lists[currentTab];
+      if (!currentItems || currentItems.length === 0) {
+        alert('No data to export in the current category.');
+        return;
+      }
+
+      let content = '';
+      let filename = `github_${currentTab}_${Date.now()}`;
+      let mimeType = '';
+
+      if (format === 'csv') {
+        const rows = [['Username', 'Profile URL', 'Avatar URL']];
+        currentItems.forEach(u => rows.push([u.login, u.html_url, u.avatar_url]));
+        content = rows.map(r => r.join(',')).join('\n');
+        filename += '.csv';
+        mimeType = 'text/csv;charset=utf-8;';
+      } else {
+        content = JSON.stringify(currentItems.map(u => ({
+          login: u.login,
+          profile_url: u.html_url,
+          avatar_url: u.avatar_url,
+          id: u.id
+        })), null, 2);
+        filename += '.json';
+        mimeType = 'application/json;charset=utf-8;';
+      }
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    document.getElementById('username').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') startAnalysis();
+    });
+  </script>
+</body>
+</html>
